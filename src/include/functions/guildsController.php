@@ -34,7 +34,6 @@
             $channelList = $channels;
             unset($channels);
 
-
             switch($cfg['mode'])
             {
                 case "openapps":
@@ -55,11 +54,10 @@
                     }
 
             }
-
             if(!empty($clans))
             {
                 foreach($clans as $name => $clan)
-                {
+                 {
                     $channels = array();
                     $first_channel = $clan['cids'][0];
                     $last_channel = $clan['cids'][array_key_last($clan['cids'])];
@@ -93,6 +91,7 @@
                         }
                     }
 
+
                     $i = 0;
                     foreach($bots as $bot)
                     {
@@ -100,7 +99,6 @@
                         $correctName = str_replace(["[NAME]", "[num]"], [$name, $i], $cfg['botName']);
                         if($correctName != $bot['client_nickname'])
                         {
-                            echo 1;
                             $ts->sendMessage(1, $bot['clid'], str_replace(["[NAME]", "[num]"], [$name, $i], $cfg['name_command'] . " " . $cfg["botName"]));
                         }
                     }
@@ -116,6 +114,7 @@
                             } else {
                                 $needed = $cfg['sectors'][$clan['type']] - count($bots);
                             }
+
 
                             if(isset($over))
                             {
@@ -150,7 +149,7 @@
                                         $i++;
                                         $ts->sendMessage(1, $client['clid'], str_replace(["[NAME]", "[num]"], [$name, count($bots)+$i], $cfg['setName']));
                                         $ts->clientMove($client['clid'], $clan['channel']);
-                                        foreach($clients as $key => $client)
+                                        foreach($clients as $key => $bot)
                                         {
                                             if($client['clid'] == $bot['clid'])
                                             {
