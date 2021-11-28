@@ -22,48 +22,150 @@
  * 
  * 
  */ 
-    class checkBot
+    class guildsController
     {        
         public function init($ts, $cfg, $clients, $Main, $TeamSpeak)
         {
-            $count = 0;
-            $bots = array();
-            foreach($clients as $client)
+            $channelList = $ts->channelList()['data'];
+            foreach($channelList as $channel)
             {
-                $clGroups = explode(",",$client['client_servergroups']);
-                if($client['client_type'] == 0 && $Main->inGroup($cfg['musicbot_groups'], $clGroups) && $client['cid'] == $cfg['musicbot_cid'])
-                {
-                    $bots[] = $client;
-                    $count++;
-                    if($count > $cfg['max_bots'])
-                    {
-                        $ts->sendMessage(1, $client['clid'], $cfg['disconnect_command']);
-                        $count--;
-                    }
-                }
+                $channels[$channel['cid']] = $channel;
             }
+            $channelList = $channels;
+            unset($channels);
 
-            if(count($bots) < $cfg['min_bots'])
+            switch($cfg['mode'])
             {
-                $ts3ab = new Lukieer\TS3AudioBot\Api\Instance($cfg['ts3audiobot']['url'], $cfg['ts3audiobot']['login'], $cfg['ts3audiobot']['password']);
-                $botList = $ts3ab->botList();
-                $ok = false;
-                foreach($botList as $bot)
-                {
-                    if($bot['Status'] == 0)
-                    {
-                        $ts3ab->connect($bot['Name']);
-                        $ok = true;
-                        break;
+                case "openapps":
+                    try {
+                        $pdo = new PDO("mysql:host=" . $cfg['database']['address'] . ";dbname=" . $cfg['database']['database'] . "", $cfg['database']['login'], $cfg['database']['password']);
+                        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                    } catch(PDOException $e) {
+                        throw new Exception("Nie udało się połączyć z bazą danych!");
+                        return false;
                     }
-                }
-                if(!isset($ok) && isset($bots[0]))
-                {
-                    $ts->sendMessage(1, $bots[0], "!bot connect to ".$cfg['teamspeak']);
-                    $chat = $ts->readChatMessage('textprivate')['data'];
-                    $matches = explode("Id: ", $chat['msg'])[1];
-                    $matches = explode(" Name:",$matches)[0];
-                    $ts3ab->bot($matches)->save('AutoSave-'.$bots[0].substr(md5(microtime()),rand(0,26),3));
+
+                    $request = $pdo->query("SELECT `cids`, `name`,`type`, `teleport` FROM ".$cfg['database']['table']);
+                    $guilds = $request->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach($guilds as $guild)
+                    {
+                        $clans[$guild['name']] = ['cids' => explode(", ",$guild['cids']), 'type' => $guild['type'], 'channel' => $guild['teleport']];
+                    }
+
+            }
+            if(!empty($clans))
+            {
+                foreach($clans as $name => $clan)
+                 {
+                    $channels = array();
+                    $first_channel = $clan['cids'][0];
+                    $last_channel = $clan['cids'][array_key_last($clan['cids'])];
+                    foreach($clan['cids'] as $cid)
+                    {
+
+                        foreach($channelList as $channel)
+                        {
+                            if($channel['cid'] == $cid)
+                            {
+                                $channels[$channel['cid']] = $channel;
+                            }
+                        }
+
+                        foreach($Main->getSubChannels($channelList, $cid) as $channel)
+                        {
+                            $channels[$channel['cid']] = $channel;
+                        }
+
+                    }
+
+                    $bots = [];
+                    foreach($channels as $channel)
+                    {
+                        foreach($Main->channelClientList($clients, $channel['cid']) as $client)
+                        {
+                            if($Main->inGroup($cfg['musicbot_groups'], explode(",",$client['client_servergroups'])))
+                            {
+                                $bots[] = $client;
+                            }
+                        }
+                    }
+
+
+                    $i = 0;
+                    foreach($bots as $bot)
+                    {
+                        $i++;
+                        $correctName = str_replace(["[NAME]", "[num]"], [$name, $i], $cfg['botName']);
+                        if($correctName != $bot['client_nickname'])
+                        {
+                            echo 1;
+                            $ts->sendMessage(1, $bot['clid'], str_replace(["[NAME]", "[num]"], [$name, $i], $cfg['name_command'] . " " . $cfg["botName"]));
+                        }
+                    }
+
+                    if(isset($cfg['sectors'][$clan['type']]))
+                    {
+                        if($cfg['sectors'][$clan['type']] != count($bots))
+                        {
+
+                            if(count($bots) > $cfg['sectors'][$clan['type']])
+                            {
+                                $over = count($bots) - $cfg['sectors'][$clan['type']];
+                            } else {
+                                $needed = $cfg['sectors'][$clan['type']] - count($bots);
+                            }
+
+
+                            if(isset($over))
+                            {
+                                foreach($bots as $bot)
+                                {
+                                    if($over != 0)
+                                    {
+                                        if($ts->clientMove($bot['clid'], $cfg['musicbot_channel'])['success'])
+                                        {
+                                            foreach($clients as $key => $client)
+                                            {
+                                                if($client['clid'] == $bot['clid'])
+                                                {
+                                                    $clients[$key]['cid'] = $cfg['musicbot_channel'];
+                                                }
+                                            }
+                                            $ts->sendMessage(1, $bot['clid'], str_replace("[db]", $client['client_database_id'], $cfg['backName']));
+                                            $over--;
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            if(isset($needed))
+                            {
+                                $i = 0;
+                                foreach($Main->channelClientList($clients, $cfg['musicbot_channel']) as $client)
+                                {
+                                    if($needed != 0)
+                                    {
+                                        echo 4;
+                                        $i++;
+                                        $ts->sendMessage(1, $client['clid'], str_replace(["[NAME]", "[num]"], [$name, count($bots)+$i], $cfg['setName']));
+                                        $ts->clientMove($client['clid'], $clan['channel']);
+                                        foreach($clients as $key => $bot)
+                                        {
+                                            if($client['clid'] == $bot['clid'])
+                                            {
+                                                $clients[$key]['cid'] = $clan['channel'];
+                                            }
+                                        }
+                                        $needed--;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
