@@ -65,7 +65,6 @@
                         {
                             $ts->sendMessage(1, $bot['clid'], "!bot connect to ".$cfg['teamspeak']);
                             $chat = $ts->readChatMessage('textprivate')['data'];
-                            var_dump($chat);
                             $matches = explode("Id: ", $chat['msg'])[1];
                             $matches = explode(" Name:",$matches)[0];
                             $ts3ab->bot($matches)->save('AutoSave-'.$bot['client_database_id'].substr(md5(microtime()),rand(0,26),3));
