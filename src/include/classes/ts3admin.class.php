@@ -57,7 +57,49 @@ class ts3admin {
   */
 	public $runtime = array('client_clid' => 0, 'socket' => '', 'selected' => false, 'host' => '', 'queryport' => '10011', 'timeout' => 2, 'debug' => array(), 'fileSocket' => '');
 
-
+public function readChatMessage($type = 'textchannel', $keepalive = false, $cid = -1)
+	{
+		$availTypes = array('textserver', 'textchannel', 'textprivate');
+		$rtnData = array('success' => 0, 'data' => array('invokerid' => '', 'invokeruid' => '', 'invokername' => '', 'msg' => '', 'targetmode' => ''));
+		
+		if(!$this->isConnected()) {
+			$this->addDebugLog('script isn\'t connected to server', $tracert[1]['function'], $tracert[0]['line']);
+			return $rtnData;
+		}
+		
+		if(!in_array($type, $availTypes)) {
+			$this->addDebugLog('Invalid passed read type', $tracert[1]['function'], $tracert[0]['line']);
+			return $rtnData;
+		}
+		
+		if(!$this->runtime['selected']) { return $this->checkSelected(); }
+		
+		if($type == 'textchannel')
+		{
+			$this->clientMove($this->getQueryClid(), $cid);
+		}
+		
+		$this->executeCommand("servernotifyregister event=$type" . ($cid != -1 ? " id=$cid" : "") , null);
+		
+		$data = fgets($this->runtime['socket'], 4096);
+		
+		if(!empty($data))
+		{		
+			$rtnData['success'] = 1;
+			$msgData = explode(" ", $data);
+			foreach($msgData as $param)
+			{
+				$paramData = explode("=", $param);
+				if(array_key_exists($paramData[0], $rtnData['data']))
+				{
+					$rtnData['data'][$paramData[0]] = $this->unescapeText(implode("=", array_slice($paramData, 1, count($paramData) -1)));
+				}
+			}
+		}
+		if(!$keepalive) $this->serverNotifyUnregister();
+		
+		return $rtnData;
+	}
 //*******************************************************************************************	
 //************************************ Public Functions *************************************
 //******************************************************************************************
