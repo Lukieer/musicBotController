@@ -95,6 +95,11 @@ class Instance extends request {
 
 		return parent::request2($this->auth, 'bot/connect/template/'.$name);
 	}
+	
+	public function systemInfo(){
+
+		return parent::request2($this->auth, 'system/info');
+	}
 
 	public function delete($name)
 	{
