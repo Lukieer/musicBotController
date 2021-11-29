@@ -56,6 +56,7 @@
                         break;
                     }
                 }
+                $needed = $cfg['min_bots'] - count($bots);
                 if(!$ok)
                 {
 
@@ -63,12 +64,18 @@
                     {
                         if($Main->inGroup($cfg['musicbot_groups'], explode(",",$bot['client_servergroups'])))
                         {
-                            $ts->sendMessage(1, $bot['clid'], "!bot connect to ".$cfg['teamspeak']);
-                            $chat = $ts->readChatMessage('textprivate')['data'];
-                            $matches = explode("Id: ", $chat['msg'])[1];
-                            $matches = explode(" Name:",$matches)[0];
-                            $ts3ab->bot($matches)->save('AutoSave-'.$bot['client_database_id'].substr(md5(microtime()),rand(0,26),3));
-                            break;
+                            if($needed > 0)
+                            {
+                                $ts->sendMessage(1, $bot['clid'], "!bot connect to ".$cfg['teamspeak']);
+                                $chat = $ts->readChatMessage('textprivate')['data'];
+                                var_dump($chat);
+                                $matches = explode("Id: ", $chat['msg'])[1];
+                                $matches = explode(" Name:",$matches)[0];
+                                $ts3ab->bot($matches)->save('AutoSave-'.$bot['client_database_id'].substr(md5(microtime()),rand(0,26),3));
+                                $needed--;
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
