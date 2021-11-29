@@ -114,9 +114,9 @@ return [
             'channel_id' => 1883,
             'musicbot_groups' => [113], // grupa botów muzycznych
             "ts3audiobot" => [
-                "url" => '164.132.183.145:58913',
-                "login" => 'ggELfXbLqY1M30R7peUH6wmvhKk=',
-                "password" => 'SjN7lB6uwQZkQUD7YQzgG73iG9Rj4ByV',
+                "url" => '',
+                "login" => '',
+                "password" => '',
             ],
 
             'interval' => ['hours' => 0,'minutes' => 1,'seconds' => 0],  
