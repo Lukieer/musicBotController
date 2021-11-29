@@ -1,6 +1,6 @@
 <h1 align="center">TS3 MusicBot helper 👋</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://pl.wikipedia.org/wiki/GNU_General_Public_License" target="_blank">
     <img alt="License: GNU GENERAL PUBLIC LICENSE" src="https://img.shields.io/badge/License-GNU GENERAL PUBLIC LICENSE-yellow.svg" />
   </a>
