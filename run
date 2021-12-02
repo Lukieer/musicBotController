@@ -2,6 +2,7 @@
 
 function clears {
 	clear
+
 echo "$magenta"
 echo ""
 echo "
@@ -14,7 +15,7 @@ echo "
 "
 echo ":: musicBotController"
 echo ":: Author: Maciek \"Lukieer\" Skarbek"
-echo ":: Version: 1.2.0"
+echo ":: Version: 1.2.0 "
 echo ""
 echo "$reset"
 }
